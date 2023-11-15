@@ -1,0 +1,112 @@
+from nai.exceptions import SolutionNotDefined, ProblemSyntaxError, ProblemError
+
+def isnumeric(string: str) -> bool:
+    try:
+        int(string)
+    except ValueError:
+        try:
+            float(string)
+        except ValueError:
+            return False
+    return True
+
+def multiply_members(m1: str, m2: str, found: str) -> str:
+    if found in m1 and found in m2:
+        nan = found + "^2"
+    elif found in m1 or found in m2:
+        nan = found
+    else:
+        nan = ""
+
+    result = str(float(m1.split(found)[0] or '1') * float(m2.split(found)[0] or '1')) + nan
+
+    return result
+
+def open_brackets(problem: str, found: str) -> str:
+    if problem.count("(") != problem.count(")"):
+        raise ProblemSyntaxError(f"Some brackets not closed in problem['{problem}']")
+    if problem.count("(") == 0:
+        return problem
+
+    brackets = problem.split("(")
+    for bracket in brackets[1:]:
+        if bracket and ")" not in bracket:
+            raise ProblemSyntaxError(f"Brackets is not closed before next brackets")
+        splited = bracket.split(")")
+        splited[0] = "(" + splited[0] + ")"
+        brackets[brackets.index(bracket)] = splited
+
+    _ol = []
+    for bracket in brackets:
+        if isinstance(bracket, str) and bracket:
+            _ol.append(bracket)
+        elif isinstance(bracket, list):
+            for _bracket in bracket:
+                if _bracket:
+                    _ol.append(_bracket)
+    brackets = _ol
+
+    result = []
+    if "(" in brackets[0]:
+        for el in brackets[0].replace("(", "").replace(")", "").split():
+            result.append(el)
+    for bracket in brackets[1:]:
+        if "(" in bracket and ")" in bracket:
+            _old = brackets[brackets.index(bracket) - 1].split()
+            _new = bracket.replace("(", "").replace(")", "").split()
+            for i in range(len(_old) - 1):
+                if _old[i] == "+" and i != len(_old):
+                    del _old[i]
+            for i in range(len(_new) - 1):
+                if _new[i] == "+" and i != len(_new):
+                    del _new[i]
+            for i in range(0, len(_old) - 1):
+                if _old[i] == "-":
+                    _old[i + 1] = "-" + _old[i + 1]
+                    del _old[i]
+            for i in range(0, len(_new) - 1):
+                if _new[i] == "-":
+                    _new[i + 1] = "-" + _new[i + 1]
+                    del _new[i]
+            if _old:
+                if isnumeric(_old[-1].replace(found, "")) or _old[-1] in [found, "-" + found, "-"]:
+                    if _old[-1] == "-":
+                        _multiplier = "-1"
+                    elif _old[-1] == found:
+                        _multiplier = found
+                    elif _old[-1] == "-" + found:
+                        _multiplier = "-1" + found
+                    else:
+                        _multiplier = _old[-1]
+
+                    del _old[-1]
+                    for i in range(len(_new)):
+                        _new[i] = multiply_members(_multiplier, _new[i], found=found)
+
+            for el in [*_old, *_new]:
+                if "-" in el:
+                    result.append("-")
+                    result.append(el.replace("-", ""))
+                else:
+                    if result:
+                        result.append("+")
+                    result.append(el.replace("-", ""))
+
+            while i != len(result) - 1:
+                if result[i] == result[i + 1]:
+                    del result[i]
+                    i -= 1
+                i += 1
+    if "(" not in brackets[-1]:
+        for el in brackets[-1].split():
+            result.append(el)
+
+    return " ".join(result)
+
+def member_type(member: str) -> str:
+    if isnumeric(member):
+        return "number"
+    elif "^2" in member and not isnumeric(member.replace("^2", "")):
+        return "x2-number"
+    else:
+        return "x-number"
