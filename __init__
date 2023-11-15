@@ -1,0 +1,25 @@
+from nai.logger import Logger
+from nai.exceptions import SolutionNotDefined, ProblemSyntaxError, ProblemError
+from nai.problem import Problem, ModProblem
+from nai.tools import isnumeric, multiply_members, open_brackets, member_type
+
+logger = Logger()
+
+def find(x: str, problem: Problem) -> str:
+    if isinstance(problem, Problem):
+        try:
+            solution = problem.solution[x]
+            if isinstance(solution, list):
+                result = ""
+                for sol in solution:
+                    if solution.index(sol) != 0:
+                        result += " <or> "
+                    result += f"{x}{solution.index(sol) + 1} = {sol}"
+                for _sub in result.split(" <or> "):
+                    logger.write(_sub)
+            elif isinstance(solution, str) or solution in [None, any]:
+                result = f"{x} = {problem.solution[x] if problem.solution[x] != any else 'Any'}"
+                logger.write(result)
+        except KeyError:
+            raise SolutionNotDefined(f"Solution for '{x}' is not defined. Maybe you mean '{list(problem.solution.keys())[0]}'?")
+        return result
