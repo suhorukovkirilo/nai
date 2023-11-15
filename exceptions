@@ -1,0 +1,8 @@
+class SolutionNotDefined(Exception):
+    pass
+
+class ProblemSyntaxError(Exception):
+    pass
+
+class ProblemError(Exception):
+    pass
