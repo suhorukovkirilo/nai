@@ -1,0 +1,28 @@
+from datetime import datetime as dt
+from colorama import Fore
+
+class Logger:
+    def __init__(self, place="console", when=True, colorful=True):
+        self.place = place
+        self.when = bool(when)
+        self.colorful = bool(colorful)
+        self.__working = False
+
+    def write(self, text, good=True):
+        if self.__working:
+            if self.colorful:
+                text = (Fore.LIGHTYELLOW_EX + "[" + Fore.LIGHTCYAN_EX + dt.utcnow().strftime("%H:%M:%S") + Fore.LIGHTYELLOW_EX + "]" if self.when else "") + (Fore.LIGHTGREEN_EX if good else Fore.LIGHTRED_EX) + " " + str(text)
+            else:
+                text = ("[" + dt.utcnow().strftime("%H:%M:%S") + "]" + " " if self.when else "") + str(text)
+
+            if self.place == "console":
+                print(text)
+            else:
+                with open(self.place, "a", encoding="utf-8") as file:
+                    file.write(text)
+
+    def enable(self):
+        self.__working = True
+
+    def disable(self):
+        self.__working = False
