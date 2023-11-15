@@ -1,0 +1,121 @@
+from nai.exceptions import SolutionNotDefined, ProblemSyntaxError, ProblemError
+from nai.tools import isnumeric, multiply_members, open_brackets, member_type
+
+class Problem:
+    def __init__(self, problem):
+        self.found = list(set([x for x in problem if x.isalpha()]))
+
+        if len(self.found) != 1:
+            raise ProblemError(f"Simple Problem requires only 1 variable but found {len(self.found)} in {self.found}")
+        self.found = self.found[0]
+
+        self.members = {"one": problem.split("=")[0], "two": problem.split("=")[1]}
+        self.members["one"] = open_brackets(self.members["one"], found=self.found).split()
+        self.members["two"] = open_brackets(self.members["two"], found=self.found).split()
+
+        self.result = {"one": 0, "two": 0}
+
+        one = self.members["one"]
+        for i in range(len(one)):
+            try:
+                if one[i] == "+":
+                    del one[i]
+                elif one[i] == "-":
+                    one[i + 1] = "-" + one[i + 1]
+                    del one[i]
+            except IndexError:
+                pass
+
+        two = self.members["two"]
+        for i in range(0, len(two)):
+            try:
+                if two[i] == "+":
+                    del two[i]
+                elif two[i] == "-":
+                    two[i + 1] = "-" + two[i + 1]
+                    del two[i]
+            except IndexError:
+                pass
+        if "^" in "".join([*self.members["one"], *self.members["two"]]):
+            str_members = " ".join([*self.members["one"], *self.members["two"]])
+            if str_members.count(self.found + "^2") == 0:
+                allowed = self.found + "^2"
+                raise ProblemError(f"^ allowed only with '{allowed}'")
+
+            for el in self.members["two"]:
+                if "-" in el:
+                    self.members["one"].append(el.replace("-", ""))
+                else:
+                    self.members["one"].append("-" + el)
+            self.members = self.members["one"]
+
+            a, b, c = 0, 0, 0
+            for member in self.members:
+                if self.found + "^2" in member:
+                    num = member.replace(self.found + "^2", "")
+                    a += 1 if num == '' else -1 if num == '-' else float(num)
+                elif self.found in member:
+                    num = member.replace(self.found, "")
+                    b += 1 if num == '' else -1 if num == '-' else float(num)
+                else:
+                    c += float(member)
+            d = b ** 2 - 4 * a * c
+            if d < 0:
+                self.solution = {self.found: None}
+            else:
+                if d > 0:
+                    x1, x2 = (-b + d ** 0.5)/(2 * a), (-b - d ** 0.5)/(2 * a)
+                    self.solution = {self.found: [x1, x2]}
+                elif d == 0:
+                    x = -b/(2 * a)
+                    self.solution = {self.found: str(x)}
+        else:
+            new_one = []
+            new_two = []
+            for i in range(0, len(one)):
+                if member_type(one[i]) == "number":
+                    new_two.append("-" + one[i] if "-" not in one[i] else one[i].replace("-", ""))
+                else:
+                    new_one.append(one[i])
+
+            for i in range(0, len(two)):
+                if member_type(two[i]) == "x-number":
+                    new_one.append("-" + two[i] if "-" not in two[i] else two[i].replace("-", ""))
+                else:
+                    new_two.append(two[i])
+
+            self.members["one"] = one = new_one
+            self.members["two"] = two = new_two
+
+            for el in one:
+                if el.replace(self.found, "") == "-":
+                    self.result["one"] -= 1
+                else:
+                    self.result["one"] += eval(el.replace(self.found, "") or '1')
+
+            for el in two:
+                self.result["two"] += eval(el.replace(self.found, ""))
+
+            if self.result["one"] != 1:
+                try:
+                    self.result["two"] = self.result["two"] / self.result["one"]
+                    self.result["one"] /= self.result["one"]
+                except ZeroDivisionError:
+                    if eval("".join([str(self.result["one"])]).replace(self.found, "*5")) == eval("".join([str(self.result["two"])])):
+                        self.result["two"] = any
+                    else:
+                        self.result["two"] = None
+                    self.result["one"] = 1
+
+            self.result["one"] = round(self.result["one"], 3)
+            if self.result["two"] not in [any, None]:
+                self.result["two"] = round(self.result["two"], 3)
+
+            self.solution = {self.found: str(self.result["two"])}
+
+
+class ModProblem:
+    pass
+
+class SystemProblem:
+    pass
